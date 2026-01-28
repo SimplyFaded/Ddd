@@ -2,171 +2,174 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>—</title>
+<title>Home</title>
 
 <style>
 html, body {
-    margin: 0;
-    padding: 0;
-    background: #0e0e0e;
-    color: #e6e6e6;
-    font-family: Georgia, serif;
-    height: 200vh;
-    overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  color: #111;
+  font-family: system-ui, sans-serif;
+  transition: background 2s, color 2s;
 }
 
-#container {
-    max-width: 600px;
-    margin: 20vh auto;
-    padding: 40px;
-    transition: all 2s ease;
+main {
+  max-width: 700px;
+  margin: 15vh auto;
+  padding: 40px;
+}
+
+h1 {
+  font-weight: 500;
 }
 
 p {
-    font-size: 1.2rem;
-    line-height: 1.7;
-    opacity: 0.85;
-    transition: opacity 2s ease, letter-spacing 2s ease;
+  line-height: 1.6;
 }
 
-.hidden {
-    opacity: 0;
+#whisper {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  font-style: italic;
+  transition: opacity 2s;
+  pointer-events: none;
 }
 
-.tight {
-    letter-spacing: -0.03em;
+/* creep states */
+.creep-1 {
+  background: #eee;
 }
 
-#message {
-    margin-top: 60px;
-    font-style: italic;
-    opacity: 0;
-    transition: opacity 3s ease;
+.creep-2 {
+  background: #111;
+  color: #e5e5e5;
 }
 
-#message.show {
-    opacity: 0.6;
+.creep-3 {
+  letter-spacing: 0.04em;
 }
 
-/* subtle noise */
-body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
-    pointer-events: none;
+.lag {
+  filter: blur(0.6px);
 }
+
 </style>
 </head>
-
 <body>
 
-<div id="container">
-    <p id="mainText">
-        Du bist hier gelandet, ohne genau zu wissen warum.
-    </p>
+<main id="main">
+  <h1>Willkommen</h1>
+  <p>
+    Das ist eine einfache Website.  
+    Sie erklärt nichts Besonderes.  
+    Du kannst sie dir in Ruhe ansehen.
+  </p>
+</main>
 
-    <div id="message"></div>
-</div>
+<div id="whisper"></div>
+
+<!-- audio (sehr leise, loop) -->
+<audio id="breathing" loop preload="auto">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=">
+</audio>
 
 <script>
-let clicks = 0;
-let scrolls = 0;
-let lastMove = Date.now();
-let startTime = Date.now();
-let mouseSpeed = 0;
-let lastX = null;
-let lastY = null;
+let start = Date.now();
+let phase = 0;
+let interacted = false;
 
-const messages = {
-    idle: [
-        "Du wartest.",
-        "Du hast nicht aufgehört.",
-        "Du erwartest etwas."
-    ],
-    click: [
-        "Du suchst etwas.",
-        "Du klickst, aber entscheidest dich nicht."
-    ],
-    scroll: [
-        "Schon gesehen.",
-        "Schon gelesen."
-    ],
-    time: [
-        "Du bist immer noch hier.",
-        "Es sind jetzt ein paar Minuten."
-    ]
-};
+const whispers = [
+  "hast du das auch gemerkt?",
+  "das war gerade langsamer.",
+  "bleib kurz stehen.",
+  "das gehört nicht so.",
+  "du bist noch da."
+];
 
-const messageBox = document.getElementById("message");
-const container = document.getElementById("container");
-const text = document.getElementById("mainText");
+const whisperEl = document.getElementById("whisper");
+const main = document.getElementById("main");
+const audio = document.getElementById("breathing");
 
-function showMessage(msg) {
-    messageBox.textContent = msg;
-    messageBox.classList.add("show");
-    setTimeout(() => messageBox.classList.remove("show"), 8000);
+/* user interaction unlocks audio */
+document.addEventListener("click", () => {
+  interacted = true;
+  audio.volume = 0.03;
+});
+
+/* random whisper text */
+function whisper(text) {
+  whisperEl.textContent = text;
+  whisperEl.style.opacity = "0.6";
+  setTimeout(() => whisperEl.style.opacity = "0", 4000);
 }
 
-/* Click behavior */
-document.addEventListener("click", () => {
-    clicks++;
-    if (clicks === 5) {
-        showMessage(messages.click[0]);
-        container.style.maxWidth = "520px";
-    }
-    if (clicks === 10) {
-        showMessage(messages.click[1]);
-        text.classList.add("tight");
-    }
-});
+/* fake lag */
+function lag() {
+  document.body.classList.add("lag");
+  setTimeout(() => {
+    document.body.classList.remove("lag");
+  }, 150 + Math.random() * 300);
+}
 
-/* Scroll behavior */
-document.addEventListener("scroll", () => {
-    scrolls++;
-    if (scrolls === 8) {
-        showMessage(messages.scroll[0]);
-    }
-    if (scrolls === 15) {
-        showMessage(messages.scroll[1]);
-        document.body.style.scrollBehavior = "smooth";
-    }
-});
-
-/* Mouse movement */
-document.addEventListener("mousemove", e => {
-    const now = Date.now();
-    if (lastX !== null) {
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        mouseSpeed = Math.sqrt(dx*dx + dy*dy);
-        if (mouseSpeed > 80) {
-            showMessage("Unruhig.");
-        }
-    }
-    lastX = e.clientX;
-    lastY = e.clientY;
-    lastMove = now;
-});
-
-/* Idle detection */
+/* escalation loop */
 setInterval(() => {
-    if (Date.now() - lastMove > 20000) {
-        showMessage(messages.idle[Math.floor(Math.random() * messages.idle.length)]);
+  const t = (Date.now() - start) / 1000;
+
+  // PHASE 1 – still normal
+  if (t > 30 && phase === 0) {
+    document.body.classList.add("creep-1");
+    phase = 1;
+  }
+
+  // PHASE 2 – unease
+  if (t > 60 && phase === 1) {
+    document.body.classList.add("creep-2");
+    whisper("irgendwas fühlt sich off an.");
+    phase = 2;
+  }
+
+  // PHASE 3 – instability
+  if (t > 90 && phase === 2) {
+    document.body.classList.add("creep-3");
+    phase = 3;
+  }
+
+  // random lag
+  if (phase >= 2 && Math.random() < 0.15) {
+    lag();
+  }
+
+  // random whisper
+  if (phase >= 2 && Math.random() < 0.1) {
+    whisper(whispers[Math.floor(Math.random() * whispers.length)]);
+  }
+
+  // audio creep
+  if (phase >= 3 && interacted) {
+    audio.play().catch(() => {});
+    if (Math.random() < 0.05) {
+      audio.volume = 0.02 + Math.random() * 0.04;
     }
-}, 5000);
+  }
 
-/* Time-based changes */
-setTimeout(() => {
-    showMessage(messages.time[0]);
-    text.textContent = "Du liest das genauer als du solltest.";
-}, 60000);
+}, 4000);
 
-setTimeout(() => {
-    showMessage(messages.time[1]);
-    text.textContent = "Es verändert sich nicht mehr viel.";
-    container.style.opacity = "0.85";
-}, 180000);
+/* behavior-based creep */
+document.addEventListener("mousemove", e => {
+  if (phase >= 3 && Math.random() < 0.02) {
+    whisper("beweg dich nicht so.");
+  }
+});
+
+document.addEventListener("scroll", () => {
+  if (phase >= 2 && Math.random() < 0.1) {
+    lag();
+  }
+});
 </script>
 
 </body>
