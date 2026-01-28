@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>—</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #0e0e0e;
+    color: #e6e6e6;
+    font-family: Georgia, serif;
+    height: 200vh;
+    overflow-x: hidden;
+}
+
+#container {
+    max-width: 600px;
+    margin: 20vh auto;
+    padding: 40px;
+    transition: all 2s ease;
+}
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.7;
+    opacity: 0.85;
+    transition: opacity 2s ease, letter-spacing 2s ease;
+}
+
+.hidden {
+    opacity: 0;
+}
+
+.tight {
+    letter-spacing: -0.03em;
+}
+
+#message {
+    margin-top: 60px;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 3s ease;
+}
+
+#message.show {
+    opacity: 0.6;
+}
+
+/* subtle noise */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="container">
+    <p id="mainText">
+        Du bist hier gelandet, ohne genau zu wissen warum.
+    </p>
+
+    <div id="message"></div>
+</div>
+
+<script>
+let clicks = 0;
+let scrolls = 0;
+let lastMove = Date.now();
+let startTime = Date.now();
+let mouseSpeed = 0;
+let lastX = null;
+let lastY = null;
+
+const messages = {
+    idle: [
+        "Du wartest.",
+        "Du hast nicht aufgehört.",
+        "Du erwartest etwas."
+    ],
+    click: [
+        "Du suchst etwas.",
+        "Du klickst, aber entscheidest dich nicht."
+    ],
+    scroll: [
+        "Schon gesehen.",
+        "Schon gelesen."
+    ],
+    time: [
+        "Du bist immer noch hier.",
+        "Es sind jetzt ein paar Minuten."
+    ]
+};
+
+const messageBox = document.getElementById("message");
+const container = document.getElementById("container");
+const text = document.getElementById("mainText");
+
+function showMessage(msg) {
+    messageBox.textContent = msg;
+    messageBox.classList.add("show");
+    setTimeout(() => messageBox.classList.remove("show"), 8000);
+}
+
+/* Click behavior */
+document.addEventListener("click", () => {
+    clicks++;
+    if (clicks === 5) {
+        showMessage(messages.click[0]);
+        container.style.maxWidth = "520px";
+    }
+    if (clicks === 10) {
+        showMessage(messages.click[1]);
+        text.classList.add("tight");
+    }
+});
+
+/* Scroll behavior */
+document.addEventListener("scroll", () => {
+    scrolls++;
+    if (scrolls === 8) {
+        showMessage(messages.scroll[0]);
+    }
+    if (scrolls === 15) {
+        showMessage(messages.scroll[1]);
+        document.body.style.scrollBehavior = "smooth";
+    }
+});
+
+/* Mouse movement */
+document.addEventListener("mousemove", e => {
+    const now = Date.now();
+    if (lastX !== null) {
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        mouseSpeed = Math.sqrt(dx*dx + dy*dy);
+        if (mouseSpeed > 80) {
+            showMessage("Unruhig.");
+        }
+    }
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastMove = now;
+});
+
+/* Idle detection */
+setInterval(() => {
+    if (Date.now() - lastMove > 20000) {
+        showMessage(messages.idle[Math.floor(Math.random() * messages.idle.length)]);
+    }
+}, 5000);
+
+/* Time-based changes */
+setTimeout(() => {
+    showMessage(messages.time[0]);
+    text.textContent = "Du liest das genauer als du solltest.";
+}, 60000);
+
+setTimeout(() => {
+    showMessage(messages.time[1]);
+    text.textContent = "Es verändert sich nicht mehr viel.";
+    container.style.opacity = "0.85";
+}, 180000);
+</script>
+
+</body>
+</html>
